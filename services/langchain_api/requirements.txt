@@ -1,0 +1,7 @@
+fastapi>=0.95.0
+uvicorn[standard]>=0.20.0
+langchain>=0.0.315
+chromadb>=0.5.5
+sentence-transformers>=2.2.2
+gpt4all>=2.8.2
+python-dotenv>=1.0.1

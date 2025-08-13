@@ -1,0 +1,18 @@
+# Python virtual environment
+.venv/
+
+# AI Model files (these are too large for Git)
+models/
+
+# Generated Chroma database
+chroma_db/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Environment file (contains secrets)
+.env
+
+# Generated output files
+output.mp3

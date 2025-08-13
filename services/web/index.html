@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Personal AI Research Assistant</title>
+</head>
+
+<body style="font-family:system-ui,Segoe UI,Roboto,Arial; padding:2rem;">
+    <h1>Personal AI Research Assistant (Local)</h1>
+    <p>API should be running on <code>http://localhost:8000</code></p>
+    <input id="q" placeholder="Ask a question..." style="width:60%; padding:8px;" />
+    <button onclick="ask()">Ask</button>
+    <!-- ADD THE SPEAK BUTTON -->
+    <button onclick="speak()">Speak Answer</button>
+
+    <pre id="out" style="background:#f6f8fa;padding:1rem;border-radius:8px;margin-top:1rem;"></pre>
+
+    <script>
+        // Keep track of the last answer
+        let lastAnswer = '';
+
+        async function ask() {
+            const q = document.getElementById('q').value;
+            document.getElementById('out').textContent = 'Thinking...';
+            const res = await fetch('http://localhost:8000/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: q, k: 4 })
+            });
+            const j = await res.json();
+            // Store the answer and display the full JSON
+            lastAnswer = j.answer;
+            document.getElementById('out').textContent = JSON.stringify(j, null, 2);
+        }
+
+        // ADD THE NEW SPEAK FUNCTION
+        async function speak() {
+            if (!lastAnswer) {
+                alert("Please ask a question first to get an answer to speak.");
+                return;
+            }
+            console.log("Sending text to speak:", lastAnswer);
+            await fetch('http://localhost:8000/speak', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: lastAnswer })
+            });
+        }
+    </script>
+</body>
+
+</html>
