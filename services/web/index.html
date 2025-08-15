@@ -1,51 +1,300 @@
 <!doctype html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="utf-8" />
-    <title>Personal AI Research Assistant</title>
-</head>
-
-<body style="font-family:system-ui,Segoe UI,Roboto,Arial; padding:2rem;">
-    <h1>Personal AI Research Assistant (Local)</h1>
-    <p>API should be running on <code>http://localhost:8000</code></p>
-    <input id="q" placeholder="Ask a question..." style="width:60%; padding:8px;" />
-    <button onclick="ask()">Ask</button>
-    <!-- ADD THE SPEAK BUTTON -->
-    <button onclick="speak()">Speak Answer</button>
-
-    <pre id="out" style="background:#f6f8fa;padding:1rem;border-radius:8px;margin-top:1rem;"></pre>
-
-    <script>
-        // Keep track of the last answer
-        let lastAnswer = '';
-
-        async function ask() {
-            const q = document.getElementById('q').value;
-            document.getElementById('out').textContent = 'Thinking...';
-            const res = await fetch('http://localhost:8000/ask', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: q, k: 4 })
-            });
-            const j = await res.json();
-            // Store the answer and display the full JSON
-            lastAnswer = j.answer;
-            document.getElementById('out').textContent = JSON.stringify(j, null, 2);
+    <title>Advanced AI Research Assistant v2.0</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f9;
+            --panel-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-color: #1a202c;
+            --subtle-text: #4a5568;
+            --accent-color: #4299e1;
+            --accent-hover: #2b6cb0;
+            --font-family: 'Segoe UI', system-ui, sans-serif;
         }
 
-        // ADD THE NEW SPEAK FUNCTION
-        async function speak() {
-            if (!lastAnswer) {
-                alert("Please ask a question first to get an answer to speak.");
-                return;
-            }
-            console.log("Sending text to speak:", lastAnswer);
-            await fetch('http://localhost:8000/speak', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: lastAnswer })
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            padding: 0.75rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--panel-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .upload-area {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #initial-view,
+        #loader {
+            width: 100%;
+            text-align: center;
+            padding-top: 10%;
+            color: var(--subtle-text);
+        }
+
+        #loader {
+            display: none;
+        }
+
+        #main-content {
+            display: none;
+            width: 100%;
+            flex-direction: row;
+        }
+
+        #analysis-panel,
+        #chat-panel {
+            padding: 1.5rem;
+            overflow-y: auto;
+            height: calc(100vh - 65px);
+        }
+
+        #analysis-panel {
+            width: 45%;
+            border-right: 1px solid var(--border-color);
+            background-color: #fafafa;
+        }
+
+        #chat-panel {
+            width: 55%;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--panel-bg);
+        }
+
+        .analysis-item {
+            margin-bottom: 1.5rem;
+        }
+
+        .analysis-item h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: var(--subtle-text);
+            letter-spacing: 0.5px;
+        }
+
+        .analysis-item p {
+            margin: 0;
+            white-space: pre-wrap;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+        }
+
+        .chat-message {
+            display: flex;
+            margin-bottom: 1.5rem;
+        }
+
+        .chat-bubble {
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            line-height: 1.5;
+        }
+
+        .user-message .chat-bubble {
+            background-color: var(--accent-color);
+            color: white;
+            margin-left: auto;
+        }
+
+        .ai-message .chat-bubble {
+            background-color: #edf2f7;
+            color: var(--text-color);
+        }
+
+        #chat-input-area {
+            display: flex;
+            gap: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        #chat-input {
+            flex: 1;
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        #chat-input:focus {
+            outline: 2px solid var(--accent-color);
+            border-color: transparent;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>AI Research Assistant v2.0</h1>
+        <div class="upload-area"><input type="file" id="pdfFile" accept=".pdf"><button id="uploadBtn"
+                onclick="handleUpload()">Analyze Paper</button></div>
+    </header>
+    <main>
+        <div id="initial-view">
+            <h2>Upload a research paper to begin.</h2>
+        </div>
+        <div id="loader">
+            <h2>Processing and analyzing document...</h2>
+            <p>Results will appear below as they are completed.</p>
+        </div>
+        <div id="main-content">
+            <section id="analysis-panel">
+                <h2 id="analysis-title">Structured Analysis</h2>
+                <div id="analysis-results"></div>
+            </section>
+            <section id="chat-panel">
+                <div id="chat-messages"></div>
+                <div id="chat-input-area"><input type="text" id="chat-input" placeholder="Ask a follow-up question..."
+                        disabled><button id="sendBtn" onclick="sendMessage()" disabled>Send</button></div>
+            </section>
+        </div>
+    </main>
+    <script>
+        let currentSessionId = null; let chatHistory = [];
+        const ui = { uploadBtn: document.getElementById('uploadBtn'), pdfFile: document.getElementById('pdfFile'), initialView: document.getElementById('initial-view'), loader: document.getElementById('loader'), mainContent: document.getElementById('main-content'), analysisTitle: document.getElementById('analysis-title'), analysisResults: document.getElementById('analysis-results'), chatMessages: document.getElementById('chat-messages'), chatInput: document.getElementById('chat-input'), sendBtn: document.getElementById('sendBtn'), };
+        const analysisKeys = ["Title", "Authors", "Year", "Journal", "Abstract", "Research Gap", "Methodology", "Key Findings", "Limitations", "Conclusion"];
+        ui.chatInput.addEventListener('keydown', (e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage()));
+        function setupInitialUI() {
+            ui.analysisResults.innerHTML = '';
+            analysisKeys.forEach(key => {
+                const item = document.createElement('div');
+                item.className = 'analysis-item'; item.id = `analysis-${key.toLowerCase().replace(/ /g, '-')}`;
+                item.innerHTML = `<h3>${key}</h3><p class="placeholder">Analyzing...</p>`;
+                ui.analysisResults.appendChild(item);
             });
+        }
+        async function handleUpload() {
+            if (ui.pdfFile.files.length === 0) return alert("Please select a PDF file.");
+            const file = ui.pdfFile.files[0]; const formData = new FormData(); formData.append('file', file);
+            ui.initialView.style.display = 'none'; ui.mainContent.style.display = 'flex'; ui.loader.style.display = 'block'; ui.uploadBtn.disabled = true; chatHistory = []; ui.chatMessages.innerHTML = '';
+            setupInitialUI();
+            try {
+                const uploadRes = await fetch('/upload', { method: 'POST', body: formData });
+                if (!uploadRes.ok) {
+                    let errorText = `Server error: ${uploadRes.status}. Check the terminal logs.`;
+                    try { errorText = (await uploadRes.json()).error; } catch (e) { }
+                    throw new Error(errorText);
+                }
+                const uploadData = await uploadRes.json();
+                currentSessionId = uploadData.session_id;
+                ui.analysisTitle.textContent = `Analysis: ${uploadData.filename}`;
+                await runStreamingAnalysis();
+            } catch (err) {
+                console.error("A detailed error occurred:", err);
+                alert(`An error occurred during upload: ${err.message}\n\nPlease check the terminal where you ran 'python run_all.py' for the full error details.`);
+                ui.loader.style.display = 'none'; ui.initialView.style.display = 'block'; ui.mainContent.style.display = 'none';
+            } finally {
+                ui.uploadBtn.disabled = false;
+            }
+        }
+        async function runStreamingAnalysis() {
+            ui.loader.style.display = 'none';
+            const response = await fetch('/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: currentSessionId }), });
+            const reader = response.body.getReader(); const decoder = new TextDecoder();
+            while (true) {
+                const { value, done } = await reader.read(); if (done) break;
+                const chunk = decoder.decode(value); const messages = chunk.split('\n\n').filter(Boolean);
+                for (const message of messages) {
+                    if (message.startsWith('data:')) {
+                        const data = JSON.parse(message.substring(5));
+                        const p = document.querySelector(`#analysis-${data.key.toLowerCase().replace(/ /g, '-')} p`);
+                        if (p) { p.textContent = data.value; p.classList.remove('placeholder'); }
+                    }
+                }
+            }
+            ui.chatInput.disabled = false; ui.sendBtn.disabled = false;
+        }
+        function addMessage(text, role) {
+            const messageWrapper = document.createElement('div'); messageWrapper.className = `chat-message ${role}-message`;
+            messageWrapper.innerHTML = `<div class="chat-bubble">${text}</div>`;
+            ui.chatMessages.appendChild(messageWrapper); ui.chatMessages.scrollTop = ui.chatMessages.scrollHeight;
+            return messageWrapper.querySelector('.chat-bubble');
+        }
+        async function sendMessage() {
+            const query = ui.chatInput.value.trim(); if (!query || !currentSessionId) return;
+            addMessage(query, 'user'); chatHistory.push({ role: 'user', content: query }); ui.chatInput.value = ''; ui.sendBtn.disabled = true;
+            const aiBubble = addMessage('...', 'ai');
+            try {
+                const response = await fetch('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: currentSessionId, query, history: chatHistory }), });
+                aiBubble.textContent = ''; const reader = response.body.getReader(); const decoder = new TextDecoder(); let aiResponseText = '';
+                while (true) {
+                    const { value, done } = await reader.read(); if (done) break;
+                    const chunk = decoder.decode(value); const messages = chunk.split('\n\n').filter(Boolean);
+                    for (const message of messages) {
+                        if (message.startsWith('event: error')) { throw new Error(JSON.parse(message.match(/^data: (.*)$/m)[1]).error); }
+                        else if (message.startsWith('data:')) {
+                            const data = JSON.parse(message.substring(5));
+                            if (data.token) { aiBubble.textContent += data.token; aiResponseText += data.token; }
+                        }
+                    }
+                }
+                chatHistory.push({ role: 'assistant', content: aiResponseText });
+            } catch (err) {
+                aiBubble.textContent = `Error: ${err.message}`; aiBubble.style.color = 'red';
+            } finally {
+                ui.sendBtn.disabled = false; ui.chatInput.focus();
+            }
         }
     </script>
 </body>
